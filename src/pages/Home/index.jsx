@@ -1,4 +1,4 @@
-/* eslint-disable camelcase */
+/* eslint-disable camelcase, react/prop-types */
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import TextField, { Input } from '@material/react-text-field';
@@ -14,9 +14,21 @@ import {
   ImageSkeleton as Skeleton,
 } from '../../components';
 import logo from '../../assets/logo.svg';
-import { Container, Search, Logo, Title, Carousel, Wrapper } from './styles';
+import {
+  PageLayout,
+  TopSessionBar,
+  SessionUserInfo,
+  RolePill,
+  LogoutButton,
+  Container,
+  Search,
+  Logo,
+  Title,
+  Carousel,
+  Wrapper,
+} from './styles';
 
-const Home = () => {
+const Home = ({ user, onLogout }) => {
   const [value, setValue] = useState('');
   const [query, setQuery] = useState('');
   const [placeId, setPlaceId] = useState(null);
@@ -67,7 +79,11 @@ const Home = () => {
   };
 
   const handleChange = (e) => {
-    setValue(e.target.value);
+    const nextValue = e.target.value;
+    setValue(nextValue);
+    if (nextValue.trim() === '') {
+      setQuery('');
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -76,44 +92,76 @@ const Home = () => {
     }
   };
 
+  const handleSearchClick = () => {
+    setQuery(value);
+  };
+
   return (
-    <Wrapper>
-      <Container>
-        <Search>
-          <Logo src={logo} alt="logo da empresa" />
-          <TextField
-            outlined
-            label="Pesquisar Restaurantes"
-            trailingIcon={<MaterialIcon role="button" icon="search" />}>
-            <Input type="text" value={value} onKeyPress={handleKeyPress} onChange={handleChange} />
-          </TextField>
-          {renderCarousel()}
-        </Search>
-        {renderRestaurants()}
-        <Modal open={open} onClose={() => setOpen(false)}>
-          {restaurantSelected ? (
-            <>
-              <Text size="large">{restaurantSelected?.name}</Text>
-              <Text size="medium">{restaurantSelected?.formatted_phone_number}</Text>
-              <Text size="medium">{restaurantSelected?.formatted_address}</Text>
-              <Text size="medium">
-                {restaurantSelected?.opening_hours?.open_now
-                  ? 'Aberto agora :)'
-                  : 'Fechado neste momento :('}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Skeleton width="10px" height="10px" />
-              <Skeleton width="10px" height="10px" />
-              <Skeleton width="10px" height="10px" />
-              <Skeleton width="10px" height="10px" />
-            </>
-          )}
-        </Modal>
-      </Container>
-      <Map query={query} placeId={placeId} />
-    </Wrapper>
+    <PageLayout>
+      <TopSessionBar>
+        <SessionUserInfo>
+          <span>
+            Olá, <strong>{user?.name || 'Usuário'}</strong> ({user?.email})
+          </span>
+          {user?.role && <RolePill color={user?.badgeColor}>{user.role}</RolePill>}
+        </SessionUserInfo>
+        <LogoutButton type="button" onClick={onLogout}>
+          Sair da Conta
+        </LogoutButton>
+      </TopSessionBar>
+
+      <Wrapper>
+        <Container>
+          <Search>
+            <Logo src={logo} alt="logo da empresa" />
+            <TextField
+              outlined
+              label="Pesquisar Restaurantes"
+              trailingIcon={
+                <MaterialIcon role="button" icon="search" onClick={handleSearchClick} />
+              }>
+              <Input
+                type="text"
+                value={value}
+                onKeyPress={handleKeyPress}
+                onChange={handleChange}
+              />
+            </TextField>
+            {renderCarousel()}
+          </Search>
+          {renderRestaurants()}
+          <Modal open={open} onClose={() => setOpen(false)}>
+            {restaurantSelected ? (
+              <>
+                <Text size="large">{restaurantSelected?.name}</Text>
+                <Text size="medium">{restaurantSelected?.formatted_phone_number}</Text>
+                <Text size="medium">{restaurantSelected?.formatted_address}</Text>
+                <Text size="medium">
+                  {restaurantSelected?.opening_hours?.open_now
+                    ? 'Aberto agora :)'
+                    : 'Fechado neste momento :('}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Skeleton width="10px" height="10px" />
+                <Skeleton width="10px" height="10px" />
+                <Skeleton width="10px" height="10px" />
+                <Skeleton width="10px" height="10px" />
+              </>
+            )}
+          </Modal>
+        </Container>
+        <Map
+          query={query}
+          placeId={placeId}
+          onSelectRestaurant={(selectedId) => {
+            setPlaceId(selectedId);
+            setOpen(true);
+          }}
+        />
+      </Wrapper>
+    </PageLayout>
   );
 };
 
